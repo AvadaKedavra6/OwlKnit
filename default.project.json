@@ -1,11 +1,7 @@
 {
-  "name": "owlknit",
+  "name": "OwlKnit",
   "tree": {
-    "$className": "DataModel",
-    "ReplicatedStorage": {
-      "OwlKnit": {
-        "$path": "src"
-      }
-    }
+    "$className": "Folder",
+    "$path": "src"
   }
 }
