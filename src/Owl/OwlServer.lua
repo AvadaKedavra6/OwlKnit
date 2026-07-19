@@ -7,7 +7,6 @@
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local StarterPack = game:GetService("StarterPack")
@@ -15,10 +14,9 @@ assert(RunService:IsServer(), "[Owl] OwlServer can only be used in server.")
 
 --
 
-local Comm = require(RepStorage.OwlKnit.Libs.Comm)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
+local Comm = require(script.Parent.Parent.Libs.Comm)
+local Signal = require(script.Parent.Parent.Libs.Signal)
+local Trove = require(script.Parent.Parent.Libs.Trove)
 local ServerComm = Comm.ServerComm
 
 --
@@ -29,7 +27,7 @@ local Log = OwlShared.Logger("Server")
 
 --
 
-local CommParent = RepStorage.OwlKnit
+local CommParent = script.Parent.Parent
 local OwlServer = {}
 local _owl: any = nil
 local _manualSpawn = false

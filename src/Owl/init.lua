@@ -7,8 +7,6 @@
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 
 --
 
@@ -17,10 +15,10 @@ local IsClient = RunService:IsClient()
 
 --
 
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
-local Timer = require(RepStorage.OwlKnit.Libs.Timer)
+local Promise = require(script.Parent.Libs.Promise)
+local Signal = require(script.Parent.Libs.Signal)
+local Trove = require(script.Parent.Libs.Trove)
+local Timer = require(script.Parent.Libs.Timer)
 
 local OwlShared = require(script.OwlShared)
 local Log = OwlShared.Logger("Owl")
@@ -132,8 +130,8 @@ Owl.Util = {
 	Promise = Promise,
 	Trove = Trove,
 	Timer = Timer,
-	TypeChecker = require(RepStorage.Packages.Middleware.TypeChecker),
-	RateLimiter = require(RepStorage.Packages.Middleware.RateLimiter),
+	TypeChecker = require(script.Parent.Middleware.TypeChecker),
+	RateLimiter = require(script.Parent.Middleware.RateLimiter),
 	Component = require(script.OwlComponent),
 	Data = IsServer and require(script.OwlData) or nil,
 	Action = IsClient and require(script.OwlAction) or nil,

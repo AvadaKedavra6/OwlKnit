@@ -7,15 +7,13 @@
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 assert(RunService:IsServer(), "[Owl - Data] Can only be used on the server.")
 
 --
 
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Promise = require(script.Parent.Parent.Libs.Promise)
+local Signal = require(script.Parent.Parent.Libs.Signal)
+local Trove = require(script.Parent.Parent.Libs.Trove)
 
 --
 

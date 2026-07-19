@@ -13,10 +13,10 @@ assert(RunService:IsClient(), "[Owl] OwlClient can only be used in client.")
 
 --
 
-local Comm = require(RepStorage.OwlKnit.Libs.Comm)
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
+local Comm = require(script.Parent.Parent.Libs.Comm)
+local Trove = require(script.Parent.Parent.Libs.Trove)
+local Signal = require(script.Parent.Parent.Libs.Signal)
+local Promise = require(script.Parent.Parent.Libs.Promise)
 local ClientComm = Comm.ClientComm
 
 --

@@ -7,15 +7,10 @@
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
 
 --
 
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
-
---
-
-local isClient = RunService:IsClient()
+local Promise = require(script.Parent.Parent.Libs.Promise)
 local isServer = RunService:IsServer()
 
 --

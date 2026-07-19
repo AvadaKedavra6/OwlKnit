@@ -6,9 +6,8 @@
 
 -- > // Variables \\ < --
 
-local RepStorage = game:GetService("ReplicatedStorage")
-local Promise = require(RepStorage.Packages.Libs.Promise)
-local ProfileStore = require(RepStorage.Packages.Libs.ProfileStore)
+local Promise = require(script.Parent.Parent.Parent.Libs.Promise)
+local ProfileStore = require(script.Parent.Parent.Parent.Libs.ProfileStore)
 
 --
 

@@ -6,14 +6,9 @@
 
 -- > // Variables \\ < --
 
-local RepStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-
---
-
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
+local Promise = require(script.Parent.Parent.Parent.Libs.Promise)
 local DataStoreService = game:GetService("DataStoreService")
-local DataStore2 = require(RepStorage.OwlKnit.Libs.DataStore2)
+local DataStore2 = require(script.Parent.Parent.Parent.Libs.DataStore2)
 
 --
 

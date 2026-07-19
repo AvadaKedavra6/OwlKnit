@@ -8,12 +8,11 @@
 
 local CAS = game:GetService("ContextActionService")
 local UIS = game:GetService("UserInputService")
-local RepStorage = game:GetService("ReplicatedStorage")
 
 --
 
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Trove = require(script.Parent.Parent.Libs.Trove)
+local Signal = require(script.Parent.Parent.Libs.Signal)
 
 --
 

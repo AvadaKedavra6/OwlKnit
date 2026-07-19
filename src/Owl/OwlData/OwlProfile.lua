@@ -6,13 +6,9 @@
 
 -- > // Variables \\ < --
 
-local RepStorage = game:GetService("ReplicatedStorage")
-
---
-
-local Promise = require(RepStorage.OwlKnit.Libs.Promise)
-local Signal = require(RepStorage.OwlKnit.Libs.Signal)
-local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Promise = require(script.Parent.Parent.Parent.Libs.Promise)
+local Signal = require(script.Parent.Parent.Parent.Libs.Signal)
+local Trove = require(script.Parent.Parent.Parent.Libs.Trove)
 
 --
 
