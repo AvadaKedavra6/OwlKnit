@@ -1,0 +1,13 @@
+# Rojo
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+
+# Wally
+Packages/
+wally.lock
+
+# OS
+.DS_Store
+Thumbs.db

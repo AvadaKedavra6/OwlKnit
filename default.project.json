@@ -1,0 +1,11 @@
+{
+  "name": "OwlKnit",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Packages": {
+        "$path": "src"
+      }
+    }
+  }
+}
