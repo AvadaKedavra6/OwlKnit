@@ -7,7 +7,6 @@
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
-local RepStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 assert(RunService:IsClient(), "[Owl] OwlClient can only be used in client.")
 
@@ -27,7 +26,7 @@ local Log = OwlShared.Logger("Client")
 
 --
 
-local CommParent = RepStorage.OwlKnit
+local CommParent = script.Parent.Parent
 local CommFolderTimeout = 10
 local PlayerGuiTimeout = 10
 
