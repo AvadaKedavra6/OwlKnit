@@ -11,9 +11,9 @@ local Players = game:GetService("Players")
 
 --
 
-local Promise = require(RepStorage.Packages.Libs.Promise)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
 local DataStoreService = game:GetService("DataStoreService")
-local DataStore2 = require(RepStorage.Packages.Libs.DataStore2)
+local DataStore2 = require(RepStorage.OwlKnit.Libs.DataStore2)
 
 --
 
@@ -23,7 +23,7 @@ local Log = OwlShared.Logger("Data/DataStore2")
 --
 
 local LockExpiry = 60
-local LockKey = "_owlLock"
+local _LockKey = "_owlLock"
 local VersionKey = "_version"
 local MaxRetries = 3
 local RetryDelay = 2

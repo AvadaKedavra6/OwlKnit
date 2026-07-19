@@ -13,9 +13,9 @@ assert(RunService:IsServer(), "[Owl - Data] Can only be used on the server.")
 
 --
 
-local Promise = require(RepStorage.Packages.Libs.Promise)
-local Signal = require(RepStorage.Packages.Libs.Signal)
-local Trove = require(RepStorage.Packages.Libs.Trove)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
 
 --
 

@@ -5,7 +5,7 @@
 *.rbxmx
 
 # Wally
-/Packages/
+Packages/
 wally.lock
 
 # OS

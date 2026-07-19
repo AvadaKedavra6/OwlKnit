@@ -15,10 +15,10 @@ assert(RunService:IsServer(), "[Owl] OwlServer can only be used in server.")
 
 --
 
-local Comm = require(RepStorage.Packages.Libs.Comm)
-local Signal = require(RepStorage.Packages.Libs.Signal)
-local Trove = require(RepStorage.Packages.Libs.Trove)
-local Promise = require(RepStorage.Packages.Libs.Promise)
+local Comm = require(RepStorage.OwlKnit.Libs.Comm)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
 local ServerComm = Comm.ServerComm
 
 --
@@ -29,7 +29,7 @@ local Log = OwlShared.Logger("Server")
 
 --
 
-local CommParent = RepStorage.Packages
+local CommParent = RepStorage.OwlKnit
 local OwlServer = {}
 local _owl: any = nil
 local _manualSpawn = false

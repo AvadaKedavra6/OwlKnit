@@ -12,8 +12,8 @@ local RepStorage = game:GetService("ReplicatedStorage")
 
 --
 
-local Trove = require(RepStorage.Packages.Libs.Trove)
-local Signal = require(RepStorage.Packages.Libs.Signal)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
 
 --
 

@@ -13,10 +13,10 @@ assert(RunService:IsClient(), "[Owl] OwlClient can only be used in client.")
 
 --
 
-local Comm = require(RepStorage.Packages.Libs.Comm)
-local Trove = require(RepStorage.Packages.Libs.Trove)
-local Signal = require(RepStorage.Packages.Libs.Signal)
-local Promise = require(RepStorage.Packages.Libs.Promise)
+local Comm = require(RepStorage.OwlKnit.Libs.Comm)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
 local ClientComm = Comm.ClientComm
 
 --
@@ -27,7 +27,7 @@ local Log = OwlShared.Logger("Client")
 
 --
 
-local CommParent = RepStorage.Packages
+local CommParent = RepStorage.OwlKnit
 local CommFolderTimeout = 10
 local PlayerGuiTimeout = 10
 

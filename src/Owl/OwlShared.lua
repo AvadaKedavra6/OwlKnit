@@ -11,7 +11,7 @@ local RepStorage = game:GetService("ReplicatedStorage")
 
 --
 
-local Promise = require(RepStorage.Packages.Libs.Promise)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
 
 --
 

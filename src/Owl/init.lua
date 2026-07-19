@@ -17,10 +17,10 @@ local IsClient = RunService:IsClient()
 
 --
 
-local Promise = require(RepStorage.Packages.Libs.Promise)
-local Signal = require(RepStorage.Packages.Libs.Signal)
-local Trove = require(RepStorage.Packages.Libs.Trove)
-local Timer = require(RepStorage.Packages.Libs.Timer)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Timer = require(RepStorage.OwlKnit.Libs.Timer)
 
 local OwlShared = require(script.OwlShared)
 local Log = OwlShared.Logger("Owl")

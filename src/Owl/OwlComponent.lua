@@ -12,9 +12,9 @@ local RunService = game:GetService("RunService")
 
 --
 
-local Trove = require(RepStorage.Packages.Libs.Trove)
-local Signal = require(RepStorage.Packages.Libs.Signal)
-local Promise = require(RepStorage.Packages.Libs.Promise)
+local Trove = require(RepStorage.OwlKnit.Libs.Trove)
+local Signal = require(RepStorage.OwlKnit.Libs.Signal)
+local Promise = require(RepStorage.OwlKnit.Libs.Promise)
 
 --
 
