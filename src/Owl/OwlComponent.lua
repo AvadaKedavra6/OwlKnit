@@ -1,7 +1,7 @@
 --[[
 				Owl - Component
 				This is a Knit rewrited for be more modern and friendly
-				Made with <3 by Dev_Abrahel | dc: astaroth9._
+				Made with <3 by Dev_Abrahel | dc: ._morax6_.
 --]]
 
 -- > // Variables \\ < --
@@ -19,7 +19,6 @@ local Promise = require(script.Parent.Parent.Libs.Promise)
 
 local IsClient = RunService:IsClient()
 local IsServer = RunService:IsServer()
-local ActiveComponents: {[any]: {[Instance]: any}} = {}
 
 --
 
@@ -29,16 +28,18 @@ Component.__index = Component
 -- > // Types \\ < --
 
 export type ComponentType = "Server" | "Client" | "Shared"
+export type ComponentInstance = any
+export type ComponentClassKey = any
 
 --
 
 export type ExtensionHooks = {
-	Constructing: ((component: any) -> ())?,
-	Constructed: ((component: any) -> ())?,
-	Starting: ((component: any) -> ())?,
-	Started: ((component: any) -> ())?,
-	Stopping: ((component: any) -> ())?,
-	Stopped: ((component: any) -> ())?,
+	Constructing: ((component: ComponentInstance) -> ())?,
+	Constructed: ((component: ComponentInstance) -> ())?,
+	Starting: ((component: ComponentInstance) -> ())?,
+	Started: ((component: ComponentInstance) -> ())?,
+	Stopping: ((component: ComponentInstance) -> ())?,
+	Stopped: ((component: ComponentInstance) -> ())?,
 }
 
 --
@@ -46,7 +47,7 @@ export type ExtensionHooks = {
 export type Extension = {
 	Name: string,
 	Hooks: ExtensionHooks,
-	[string]: any,
+	[string]: unknown,
 }
 
 --
@@ -57,6 +58,10 @@ export type ComponentConfig = {
 	Ancestors: {Instance}?,
 	Extensions: {Extension}?,
 }
+
+--
+
+local ActiveComponents: {[any]: {[Instance]: any}} = {}
 
 -- > // Func : Is Context Allowed \\ < --
 
@@ -80,7 +85,7 @@ end
 
 -- > // Func : Fire Extension \\ < --
 
-local function fireExtensionHook(extensions: {Extension}, hook: string, component: any)
+local function fireExtensionHook(extensions: {Extension}, hook: string, component: ComponentInstance)
 	for _, ext in ipairs(extensions) do
 		local fn = ext.Hooks and ext.Hooks[hook]
 		
@@ -121,7 +126,7 @@ function Component.new(config: ComponentConfig)
 	self._type = config.Type :: ComponentType
 	self._ancestors = config.Ancestors  or {}
 	self._extensions = config.Extensions or {}
-	self._instances = {} :: {[Instance]: any}
+	self._instances = {} :: {[Instance]: ComponentInstance}
 	self._masterTrove = Trove.new()
 	self._started = false
 	self._allowed = isContextAllowed(config.Type)
@@ -137,14 +142,14 @@ end
 
 -- > // Func : Get \\ < --
 
-function Component:Get(instance: Instance): any?
+function Component:Get(instance: Instance): ComponentInstance?
 	if not self._allowed then return nil end
 	return self._instances[instance]
 end
 
 -- > // Func : Get All \\ < --
 
-function Component:GetAll(): {any}
+function Component:GetAll(): {ComponentInstance}
 	if not self._allowed then return {} end
 
 	local result = {}
@@ -158,7 +163,7 @@ end
 
 -- > // Func ; Wait for \\ < --
 
-function Component:WaitFor(instance: Instance, timeout: number?): any
+function Component:WaitFor(instance: Instance, timeout: number?): ComponentInstance
 	if not self._allowed then
 		return Promise.reject(("[Owl - Component] WaitFor called on a %q component from %s context."):format(self._type, currentContextName()))
 	end
@@ -302,7 +307,7 @@ function Component:Stop()
 
 	self._masterTrove:Destroy()
 	self._masterTrove = Trove.new()
-	self._started     = false
+	self._started = false
 
 	ActiveComponents[self] = nil
 end
@@ -319,7 +324,7 @@ end
 
 local OwlComponent = {}
 
-function OwlComponent.new(config: ComponentConfig)
+function OwlComponent.new(config: ComponentConfig): ComponentClassKey
 	return Component.new(config)
 end
 
@@ -333,7 +338,7 @@ end
 
 -- > // Func : Owl Get Component \\ < --
 
-function OwlComponent.GetAllOfType(componentClass: any): {any}
+function OwlComponent.GetAllOfType(componentClass: ComponentClassKey): {ComponentInstance}
 	local instances = ActiveComponents[componentClass]
 	if not instances then return {} end
 
@@ -348,15 +353,15 @@ end
 
 -- > // Func Owl Get \\ < --
 
-function OwlComponent.Get(instance: Instance, componentClass: any): any
+function OwlComponent.Get(instance: Instance, componentClass: ComponentClassKey): ComponentInstance
 	local instances = ActiveComponents[componentClass]
 	if not instances then return nil end
 	return instances[instance]
-end -- > // A tester
+end
 
 -- > // Func : Owl Get One Component \\ < --
 
-function OwlComponent._GetRegistry(): {[any]: {[Instance]: any}}
+function OwlComponent._GetRegistry(): {[ComponentClassKey]: {[Instance]: ComponentInstance}}
 	return ActiveComponents
 end
 

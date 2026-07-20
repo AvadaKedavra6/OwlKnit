@@ -1,12 +1,13 @@
 --[[
 				Owl - Main
 				This is a Knit rewrited for be more modern and friendly
-				Made with <3 by Dev_Abrahel | dc: astaroth9._
+				Made with <3 by Dev_Abrahel | dc: ._morax6_.
 --]]
 
 -- > // Variables \\ < --
 
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 --
 
@@ -25,7 +26,7 @@ local Log = OwlShared.Logger("Owl")
 
 -- > // Types \\ < --
 
-export type MiddlewareFn = (plr: Player, args: {any}) -> (boolean, ...any)
+export type MiddlewareFn = (plr: Player, args: {any}) -> (boolean, ...unknown)
 export type Middleware = {MiddlewareFn}
 
 --
@@ -59,8 +60,16 @@ export type ServiceConfig = {
 	Name: string,
 	Dependencies: {string}?,
 	Middleware: {Inbound: Middleware?, Outbound: Middleware?}?,
-	Client: {[string]: any}?,
-	[string]: any,
+	Client: {[string]: unknown}?,
+	OwlInit: ((self: RegisteredService) -> ())?,
+	OwlStart: ((self: RegisteredService) -> ())?,
+	OwlDestroy: ((self: RegisteredService) -> ())?,
+	OwlOnPlayerAdded: ((self: RegisteredService, plr: Player) -> ())?,
+	OwlOnPlayerRemoving: ((self: RegisteredService, plr: Player) -> ())?,
+	OwlOnCharacterAdded: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	OwlOnCharacterRemoving: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	OwlOnSpawnReady: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	[string]: unknown,
 }
 
 --
@@ -68,8 +77,16 @@ export type ServiceConfig = {
 export type ControllerConfig = {
 	Name: string,
 	Dependencies: {string}?,
-	[string]: any,
+	OwlInit: ((self: RegisteredController) -> ())?,
+	OwlStart: ((self: RegisteredController) -> ())?,
+	[string]: unknown,
 }
+
+--
+
+type TroveLike = {Destroy: (self: TroveLike) -> ()}
+type CommLike = {Destroy: (self: CommLike) -> ()}
+export type ServiceProxy = {[string]: unknown}
 
 --
 
@@ -77,11 +94,18 @@ type RegisteredService = {
 	Name: string,
 	Dependencies: {string},
 	Middleware: {Inbound: Middleware, Outbound: Middleware},
-	Client: {[string]: any},
-	OwlInit: ((self: any) -> ())?,
-	OwlStart: ((self: any) -> ())?,
-	_comm: any,
-	[string]: any,
+	Client: {[string]: unknown},
+	OwlInit: ((self: RegisteredService) -> ())?,
+	OwlStart: ((self: RegisteredService) -> ())?,
+	OwlDestroy: ((self: RegisteredService) -> ())?,
+	OwlOnPlayerAdded: ((self: RegisteredService, plr: Player) -> ())?,
+	OwlOnPlayerRemoving: ((self: RegisteredService, plr: Player) -> ())?,
+	OwlOnCharacterAdded: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	OwlOnCharacterRemoving: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	OwlOnSpawnReady: ((self: RegisteredService, plr: Player, char: Model) -> ())?,
+	_comm: CommLike?,
+	_trove: TroveLike?,
+	[string]: unknown,
 }
 
 --
@@ -89,9 +113,18 @@ type RegisteredService = {
 type RegisteredController = {
 	Name: string,
 	Dependencies: {string},
-	OwlInit: ((self: any) -> ())?,
-	OwlStart: ((self: any) -> ())?,
-	[string]: any,
+	OwlInit: ((self: RegisteredController) -> ())?,
+	OwlStart: ((self: RegisteredController) -> ())?,
+	[string]: unknown,
+}
+
+--
+
+type LifecycleItem = {
+	Name: string,
+	Dependencies: {string},
+	OwlInit: ((self: LifecycleItem) -> ())?,
+	OwlStart: ((self: LifecycleItem) -> ())?,
 }
 
 -- > // Others Variables \\ < --
@@ -104,6 +137,10 @@ local _tokens: {[Player]: string} = {}
 
 --
 
+local _onPlayerAddedListeners: {RegisteredService} = {}
+local _onPlayerRemovingListeners: {RegisteredService} = {}
+local _onCharacterAddedListeners: {RegisteredService} = {}
+local _onCharacterRemovingListeners: {RegisteredService} = {}
 local _onStartSignal = Signal.new()
 
 --
@@ -135,6 +172,7 @@ Owl.Util = {
 	Component = require(script.OwlComponent),
 	Data = IsServer and require(script.OwlData) or nil,
 	Action = IsClient and require(script.OwlAction) or nil,
+	Logger = OwlShared.Logger,
 }
 
 -- > // Func : Create Service \\ < --
@@ -160,7 +198,7 @@ function Owl.CreateService(config: ServiceConfig): RegisteredService
 	
 	for k, v in pairs(config) do
 		if service[k] == nil then
-			(service :: any)[k] = v 
+			service[k] = v
 		end
 	end
 	
@@ -187,7 +225,7 @@ function Owl.CreateController(config: ControllerConfig): RegisteredController
 	
 	for k, v in pairs(config) do
 		if controller[k] == nil then
-			(controller :: any)[k] = v 
+			controller[k] = v
 		end
 	end
 	
@@ -217,26 +255,22 @@ end
 -- > // Func : Create Signal \\ < --
 
 function Owl.CreateSignal(opts: {unreliable: boolean?, inbound: Middleware?, outbound: Middleware?}?)
-	local o = opts or {}
-	
 	return {
 		_owlType = "Signal",
-		_unreliable = (o :: any).unreliable or false,
-		_inbound = (o :: any).inbound or {},
-		_outbound = (o :: any).outbound or {},
+		_unreliable = (opts and opts.unreliable) or false,
+		_inbound = (opts and opts.inbound) or {},
+		_outbound = (opts and opts.outbound) or {},
 	}
 end
 
 -- > // Func : Create Property \\ < --
 
 function Owl.CreateProperty<T>(initialValue: T, opts: {inbound: Middleware?, outbound: Middleware?}?)
-	local o = opts or {}
-	
 	return {
 		_owlType = "Property",
 		_initial = initialValue,
-		_inbound = (o :: any).inbound or {},
-		_outbound = (o :: any).outbound or {},
+		_inbound = (opts and opts.inbound) or {},
+		_outbound = (opts and opts.outbound) or {},
 	}
 end
 
@@ -270,77 +304,154 @@ function Owl.GetPlrToken(plr: Player): string?
 	return _tokens[plr]
 end
 
+-- > // Func : Build Lifecycle \\ < --
+
+local function buildLifecycleCache()
+	table.clear(_onPlayerAddedListeners)
+	table.clear(_onPlayerRemovingListeners)
+	table.clear(_onCharacterAddedListeners)
+	table.clear(_onCharacterRemovingListeners)
+	
+	for _, service in pairs(_services) do
+		if type(service.OwlOnPlayerAdded) == "function" then
+			table.insert(_onPlayerAddedListeners, service)
+		end
+		
+		if type(service.OwlOnPlayerRemoving) == "function" then
+			table.insert(_onPlayerRemovingListeners, service)
+		end
+		
+		if type(service.OwlOnCharacterAdded) == "function" then
+			table.insert(_onCharacterAddedListeners, service)
+		end
+		
+		if type(service.OwlOnCharacterRemoving) == "function" then
+			table.insert(_onCharacterRemovingListeners, service)
+		end
+	end
+	
+	Log.info("Lifecycle cache built: PlayerAdded:%d | PlayerRemoving:%d | CharAdded:%d | CharRemoving:%d", #_onPlayerAddedListeners, #_onPlayerRemovingListeners, #_onCharacterAddedListeners, #_onCharacterRemovingListeners)
+end
+
+-- > // Func : Player Lifecycle \\ < --
+
+function Owl._BindPlayerLifecycle()
+	local function fireList(list: {RegisteredService}, method: string, ...: unknown)
+		local args = { ... }
+		
+		for _, service in ipairs(list) do
+			task.spawn(function()
+				local fn = (service :: any)[method] :: (self: RegisteredService, ...unknown) -> ()
+				fn(service, table.unpack(args))
+			end)
+		end
+	end
+ 
+	local function setupCharacter(plr: Player)
+		if plr.Character then
+			fireList(_onCharacterAddedListeners, "OwlOnCharacterAdded", plr, plr.Character)
+		end
+ 
+		plr.CharacterAdded:Connect(function(char: Model)
+			fireList(_onCharacterAddedListeners, "OwlOnCharacterAdded", plr, char)
+		end)
+ 
+		plr.CharacterRemoving:Connect(function(char: Model)
+			fireList(_onCharacterRemovingListeners, "OwlOnCharacterRemoving", plr, char)
+		end)
+	end
+ 
+	for _, plr in ipairs(Players:GetPlayers()) do
+		_tokens[plr] = OwlShared.NewToken()
+		fireList(_onPlayerAddedListeners, "OwlOnPlayerAdded", plr)
+		setupCharacter(plr)
+	end
+ 
+	Players.PlayerAdded:Connect(function(plr: Player)
+		_tokens[plr] = OwlShared.NewToken()
+		fireList(_onPlayerAddedListeners, "OwlOnPlayerAdded", plr)
+		setupCharacter(plr)
+	end)
+ 
+	Players.PlayerRemoving:Connect(function(plr: Player)
+		fireList(_onPlayerRemovingListeners, "OwlOnPlayerRemoving", plr)
+		task.defer(function()
+			_tokens[plr] = nil
+		end)
+	end)
+end
+
 -- > // Func : Start \\ < --
 
 function Owl.Start(startConfig: StartConfig?)
 	assert(not _started and not _starting, "[Owl] Owl.Start() has already been called.")
 	_starting = true
-
+ 
 	if startConfig then
 		if startConfig.Verbose ~= nil then Owl.Config.Verbose = startConfig.Verbose end
 		if startConfig.InitTimeout ~= nil then Owl.Config.InitTimeout = startConfig.InitTimeout end
 		if startConfig.StartTimeout ~= nil then Owl.Config.StartTimeout = startConfig.StartTimeout end
 		if startConfig.GlobalMiddleware ~= nil then Owl.Config.GlobalMiddleware = startConfig.GlobalMiddleware end
 	end
-
+ 
 	OwlShared.InjectConfig(Owl.Config)
-
+ 
 	return Promise.new(function(resolve, reject)
 		local bootstrapPromise: typeof(Promise.resolve())
-
+ 
 		if IsServer then
 			local OwlServer = require(script.OwlServer)
 			OwlServer.Bootstrap(Owl, Owl.Config.GlobalMiddleware)
 			bootstrapPromise = Promise.resolve()
-
+ 
 		elseif IsClient then
 			local OwlClient = require(script.OwlClient)
 			bootstrapPromise = OwlClient.Bootstrap(Owl)
-
+ 
 		else
 			bootstrapPromise = Promise.resolve()
 		end
-
+ 
 		bootstrapPromise:andThen(function()
-			local registry: {[string]: {Dependencies: {string}, [string]: any}}
-
+			local registry
+ 
 			if IsServer then
-				registry = Owl._GetServiceRegistry() :: any
+				registry = (Owl._GetServiceRegistry() :: any) :: {[string]: LifecycleItem}
 			else
-				registry = Owl._GetControllerRegistry() :: any
+				registry = (Owl._GetControllerRegistry() :: any) :: {[string]: LifecycleItem}
 			end
-
+ 
 			local sorted, sortErr = OwlShared.TopologicalSort(registry)
 			if sortErr then
 				reject(sortErr)
 				return
 			end
-
-			local items: {any} = {}
+ 
+			local items: {LifecycleItem} = {}
 			for _, name in ipairs(sorted) do
 				table.insert(items, registry[name])
 			end
-
+ 
 			Log.info("Starting OwlInit phase (%d items)...", #items)
-
+ 
 			return OwlShared.RunPhase(
 				items,
-				function(item)
-					if type(item.OwlInit) == "function" then
+				function(item: any)
+					if item.OwlInit then
 						item:OwlInit()
 					end
 				end,
 				"OwlInit",
 				Owl.Config.InitTimeout,
 				"sequential"
-
+ 
 			):andThen(function()
 				Log.info("Starting OwlStart phase (%d items)...", #items)
-
+ 
 				return OwlShared.RunPhase(
 					items,
-					function(item)
-						if type(item.OwlStart) == "function" then
+					function(item: any)
+						if item.OwlStart then
 							item:OwlStart()
 						end
 					end,
@@ -348,24 +459,29 @@ function Owl.Start(startConfig: StartConfig?)
 					Owl.Config.StartTimeout,
 					"parallel"
 				)
-
+ 
 			end):andThen(function()
 				_started  = true
 				_starting = false
 				
 				table.freeze(Owl.Config)
-
+ 
+				if IsServer then
+					buildLifecycleCache()
+					Owl._BindPlayerLifecycle()
+				end
+ 
 				Log.info("Framework started successfully.")
 				print("[Owl] Framework started successfully.")
-
+ 
 				_onStartSignal:Fire()
 				resolve()
-
+ 
 			end):catch(function(err)
 				_starting = false
 				reject(err)
 			end)
-
+ 
 		end):catch(function(err)
 			_starting = false
 			reject(err)
@@ -398,7 +514,7 @@ function Owl.Destroy()
 		if type(service.OwlDestroy) == "function" then
 			pcall(service.OwlDestroy, service)
 		end
-
+ 
 		if service._trove then
 			service._trove:Destroy()
 		end
@@ -417,7 +533,7 @@ function Owl.Destroy()
 		if ok then
 			OwlClient.Destroy()
 		end
-		
+ 
 		if Owl.Util.Action then
 			Owl.Util.Action._DestroyAll()
 		end
@@ -428,6 +544,10 @@ function Owl.Destroy()
 	table.clear(_services)
 	table.clear(_controllers)
 	table.clear(_tokens)
+	table.clear(_onPlayerAddedListeners)
+	table.clear(_onPlayerRemovingListeners)
+	table.clear(_onCharacterAddedListeners)
+	table.clear(_onCharacterRemovingListeners)
 	
 	_onStartSignal:Destroy()
 	_onStartSignal = Signal.new()
@@ -438,10 +558,10 @@ end
 
 -- > // Func : Inject Client Proxy \\ < --
 
-function Owl._InjectClientServiceProxy(name: string, proxy: any)
+function Owl._InjectClientServiceProxy(name: string, proxy: ServiceProxy)
 	assert(IsClient, "[Owl] _InjectClientServiceProxy can only be called on the client.")
 	assert(not _services[name], ("[Owl] Service proxy %q already injected."):format(name))
-	_services[name] = proxy
+	_services[name] = (proxy :: any) :: RegisteredService
 end
 
 -- > // Funcs : Registries \\ < --

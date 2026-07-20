@@ -1,7 +1,7 @@
 --[[
 				Owl - Profile Adapter
 				This is a Knit rewrited for be more modern and friendly
-				Made with <3 by Dev_Abrahel | dc: astaroth9._
+				Made with <3 by Dev_Abrahel | dc: ._morax6_.
 --]]
 
 -- > // Variables \\ < --

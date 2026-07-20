@@ -1,7 +1,7 @@
 --[[
 				Owl - Server
 				This is a Knit rewrited for be more modern and friendly
-				Made with <3 by Dev_Abrahel | dc: astaroth9._
+				Made with <3 by Dev_Abrahel | dc: ._morax6_.
 --]]
 
 -- > // Variables \\ < --
@@ -29,13 +29,63 @@ local Log = OwlShared.Logger("Server")
 
 local CommParent = script.Parent.Parent
 local OwlServer = {}
-local _owl: any = nil
 local _manualSpawn = false
 local _spawnDebounce: {[Player]: boolean} = {}
 
 -- > // Types \\ < --
 
-type Middleware = {(plr: Player, args: {any}) -> (boolean, ...any)}
+type Middleware = {(plr: Player, args: {unknown}) -> (boolean, ...unknown)}
+
+--
+
+type TroveLike = {Destroy: (self: TroveLike) -> ()}
+type CommLike = {
+	Destroy: (self: CommLike) -> (),
+	BindFunction: (self: CommLike, name: string, fn: (plr: Player, ...unknown) -> unknown, inbound: Middleware?, outbound: Middleware?) -> (),
+	CreateSignal: (self: CommLike, name: string, unreliable: boolean, inbound: Middleware?, outbound: Middleware?) -> unknown,
+	CreateProperty: (self: CommLike, name: string, initial: unknown, inbound: Middleware?, outbound: Middleware?) -> unknown,
+}
+
+--
+
+type OwlLike = {
+	Config: {GlobalMiddleware: {Inbound: Middleware?, Outbound: Middleware?}?, [string]: unknown}?,
+	GetService: (name: string) -> unknown,
+	_GetServiceRegistry: (() -> {[string]: Service})?,
+}
+
+--
+
+type Service = {
+	Name: string,
+	Middleware: {Inbound: Middleware?, Outbound: Middleware?}?,
+	Client: {[string]: unknown}?,
+	OwlInit: ((self: Service) -> ())?,
+	OwlStart: ((self: Service) -> ())?,
+	OwlDestroy: ((self: Service) -> ())?,
+	OwlOnPlayerAdded: ((self: Service, plr: Player) -> ())?,
+	OwlOnPlayerRemoving: ((self: Service, plr: Player) -> ())?,
+	OwlOnCharacterAdded: ((self: Service, plr: Player, char: Model) -> ())?,
+	OwlOnCharacterRemoving: ((self: Service, plr: Player, char: Model) -> ())?,
+	OwlOnSpawnReady: ((self: Service, plr: Player, char: Model) -> ())?,
+	GetService: ((self: Service, name: string) -> unknown)?,
+	CreateLocalSignal: ((self: Service) -> unknown)?,
+	Destroy: ((self: Service) -> ())?,
+	Trove: TroveLike?,
+	_comm: CommLike?,
+	_trove: TroveLike?,
+	[string]: unknown,
+}
+
+--
+
+type SignalMarker = {_owlType: "Signal", _unreliable: boolean, _inbound: Middleware, _outbound: Middleware}
+type PropertyMarker = {_owlType: "Property", _initial: unknown, _inbound: Middleware, _outbound: Middleware}
+type RemoteMarker = SignalMarker | PropertyMarker
+
+--
+
+local _owl: OwlLike? = nil
 
 -- > // Func : Merge Middleware \\ < --
 
@@ -167,13 +217,15 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 		if type(value) == "function" then
 			local inboundMw = mergeMiddleware(globalMiddleware.Inbound, svcInbound, {})
 			local outboundMw = mergeMiddleware(globalMiddleware.Outbound, svcOutbound, {})
+
+			local fn = value :: (self: Service, plr: Player, ...unknown) -> unknown
 			
 			comm:BindFunction(hashedKey, function(plr: Player, ...)
 				if typeof(plr) ~= "Instance" or not plr:IsA("Player") then
 					return nil
 				end
 				
-				local ok, result = pcall(value, service, plr, ...)
+				local ok, result = pcall(fn, service, plr, ...)
 				
 				if not ok then
 					Log.warn("Remote error in service %q, key%q: %s", serviceName, key, tostring(result))
@@ -189,7 +241,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 			Log.info("Service %q bound client function %q.", serviceName, key)
 			
 		elseif type(value) == "table" then
-			local marker = value :: any
+			local marker = value :: RemoteMarker
 			
 			if marker._owlType == "Signal" then
 				local inboundMw = mergeMiddleware(globalMiddleware.Inbound, svcInbound, marker._inbound)
@@ -197,7 +249,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 				local remoteSignal = comm:CreateSignal(hashedKey, marker._unreliable, #inboundMw  > 0 and inboundMw  or nil, #outboundMw > 0 and outboundMw or nil)
 
 				clientTable[key] = remoteSignal
-				trove:Add(remoteSignal)
+				trove:Add(remoteSignal :: any)
 				
 				Log.info("Service %q created client signal %q.", serviceName, key)
 			
@@ -207,7 +259,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 				local remoteProperty = comm:CreateProperty(hashedKey, marker._initial, #inboundMw  > 0 and inboundMw  or nil, #outboundMw > 0 and outboundMw or nil)
 
 				clientTable[key] = remoteProperty
-				trove:Add(remoteProperty)
+				trove:Add(remoteProperty :: any)
 
 				Log.info("Service %q created client property %q.", serviceName, key)
 			else
@@ -218,8 +270,8 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 	
 	--
 	
-	service.GetService = function(_self: any, name: string)
-		return _owl.GetService(name)
+	service.GetService = function(_self: Service, name: string): unknown
+		return assert(_owl, "[Owl] Framework not started.").GetService(name)
 	end
 	
 	service.CreateLocalSignal = function(_self: any)
@@ -258,7 +310,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 	end
 	
 	if type(service.OwlOnCharacterAdded) == "function" or type(service.OwlOnCharacterRemoving) == "function" then
-		local playerTroves: {[number]: any} = {}
+		local playerTroves: {[number]: TroveLike} = {}
 
 		local function setupCharacterLifecycle(plr: Player)
 			if playerTroves[plr.UserId] then
@@ -357,7 +409,7 @@ function OwlServer.Bootstrap(owl: any, globalMiddleware: {Inbound: Middleware?, 
 			or {},
 	}
 	
-	local registry = owl._GetServiceRegistry and owl._GetServiceRegistry()
+	local registry: {[string]: Service} = (owl._GetServiceRegistry and owl._GetServiceRegistry()) or {}
 	local count = 0
 	
 	for _, service in pairs(registry) do

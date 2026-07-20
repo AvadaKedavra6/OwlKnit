@@ -1,7 +1,7 @@
 --[[
 				Owl - Client
 				This is a Knit rewrited for be more modern and friendly
-				Made with <3 by Dev_Abrahel | dc: astaroth9._
+				Made with <3 by Dev_Abrahel | dc: ._morax6_.
 --]]
 
 -- > // Variables \\ < --
@@ -33,13 +33,66 @@ local PlayerGuiTimeout = 10
 --
 
 local OwlClient = {}
-local _owl: any = nil
-local _clientComms: {[string]: any} = {}
+local _clientComms: {[string]: ClientCommEntry} = {}
 local _commFolder: Instance? = nil
 
 -- > // Types \\ < --
 
-type Middleware = {(plr: Player, args: {any}) -> (boolean, ...any)}
+type Middleware = {(plr: Player, args: {unknown}) -> (boolean, ...unknown)}
+type TroveLike = {Destroy: (self: TroveLike) -> ()}
+
+--
+
+type ServiceProxy = {[string]: unknown}
+
+--
+
+type ClientCommLike = {
+	Destroy: (self: ClientCommLike) -> (),
+	GetFunction: (self: ClientCommLike, name: string) -> unknown,
+	GetSignal: (self: ClientCommLike, name: string) -> unknown,
+	GetProperty: (self: ClientCommLike, name: string) -> unknown,
+}
+
+type ClientCommEntry = {
+	_comm: ClientCommLike,
+	_proxy: ServiceProxy,
+}
+
+--
+
+type OwlLike = {
+	GetController: (name: string) -> unknown,
+	GetService: (name: string) -> unknown,
+	_GetControllerRegistry: () -> {[string]: Controller},
+	_InjectClientServiceProxy: (name: string, proxy: ServiceProxy) -> (),
+}
+
+--
+
+type Controller = {
+	Name: string,
+	Dependencies: {string}?,
+	OwlInit: ((self: Controller) -> ())?,
+	OwlStart: ((self: Controller) -> ())?,
+	OwlDestroy: ((self: Controller) -> ())?,
+	OwlOnCharacterAdded: ((self: Controller, char: Model) -> ())?,
+	OwlOnCharacterRemoving: ((self: Controller, char: Model) -> ())?,
+	OwlOnPlayerCharacterReady: ((self: Controller, plr: Player, char: Model) -> ())?,
+	OwlOnLocalPlayerReady: ((self: Controller, plr: Player) -> ())?,
+	OwlOnPlayerLeft: ((self: Controller, plr: Player) -> ())?,
+	GetController: ((self: Controller, name: string) -> unknown)?,
+	GetService: ((self: Controller, name: string) -> unknown)?,
+	CreateLocalSignal: ((self: Controller) -> unknown)?,
+	Destroy: ((self: Controller) -> ())?,
+	Trove: TroveLike?,
+	_trove: TroveLike?,
+	[string]: unknown,
+}
+
+--
+
+local _owl: OwlLike? = nil
 
 -- > // Func : Wait For Comm Folder \\ < --
 
@@ -81,13 +134,14 @@ local function getOrCreateServiceProxy(serviceFolder: Instance, serviceName: str
 		return _clientComms[serviceName]._proxy
 	end
 
-	local clientComm = ClientComm.new(_commFolder, true, serviceName)
+	local commFolder = assert(_commFolder, "[Owl] _commFolder not ready.")
+	local clientComm: ClientCommLike = ClientComm.new(commFolder, true, serviceName)
 	
 	local rfFolder = serviceFolder:FindFirstChild("Owl_RF")
 	local reFolder = serviceFolder:FindFirstChild("Owl_RE")
 	local rpFolder = serviceFolder:FindFirstChild("Owl_RP")
 
-	local resolved: {[string]: any} = {}
+	local resolved: {[string]: unknown} = {}
 
 	local proxy = setmetatable({}, {
 		__index = function(_, key: string)
@@ -96,7 +150,7 @@ local function getOrCreateServiceProxy(serviceFolder: Instance, serviceName: str
 			end
 
 			local hashed = OwlShared.HashName(key)
-			local remote: any = nil
+			local remote: unknown = nil
 
 			if rfFolder and rfFolder:FindFirstChild(hashed) then
 				remote = clientComm:GetFunction(hashed)
@@ -116,10 +170,10 @@ local function getOrCreateServiceProxy(serviceFolder: Instance, serviceName: str
 		__newindex = function()
 			error("[Owl] Service proxy is read-only.", 2)
 		end,
-	})
+	} :: ServiceProxy) -- > // A surveiller
 
 	_clientComms[serviceName] = {
-		_comm  = clientComm,
+		_comm = clientComm,
 		_proxy = proxy,
 	}
 
@@ -156,12 +210,12 @@ local function bootstrapController(controller: any)
 	controller._trove = trove
 	controller.Trove = trove
 	
-	controller.GetController = function(_self: any, name: string)
-		return _owl.GetController(name)
+	controller.GetController = function(_self: Controller, name: string): unknown
+		return assert(_owl, "[Owl] Framework not started.").GetController(name)
 	end
 	
-	controller.GetService = function(_self: any, name: string)
-		return _owl.GetService(name)
+	controller.GetService = function(_self: Controller, name: string): unknown
+		return assert(_owl, "[Owl] Framework not started.").GetService(name)
 	end
 	
 	controller.CreateLocalSignal = function(_self: any)
@@ -248,7 +302,7 @@ local function bootstrapController(controller: any)
 				end)
 
 				playerGui = plr:WaitForChild("PlayerGui")
-				waiting   = false
+				waiting = false
 			end
 
 			controller:OwlOnLocalPlayerReady(plr)
