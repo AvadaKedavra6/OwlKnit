@@ -49,7 +49,11 @@ Add this to your `wally.toml`:
 
 ```toml
 [dependencies]
-owlknit = "avadakedavra6/owlknit@1.1.0"
+<<<<<<< HEAD
+owlknit = "avadakedavra6/owlknit@1.0.5"
+=======
+owlknit = "avadakedavra6/owlknit@1.0.5"
+>>>>>>> 5774ebfb5e4dfb6677772118f6d51b9ba6d20827
 ```
 
 Then install:
