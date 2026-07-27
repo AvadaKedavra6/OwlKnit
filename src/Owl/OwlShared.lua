@@ -22,6 +22,198 @@ local OwlShared = {}
 local _config: {Verbose: boolean} = {Verbose = false}
 local ContextLabel = isServer and "Server" or "Client"
 
+-- > // Types \\ < --
+
+export type LogLevel = "Trace" | "Debug" | "Info" | "Success" | "Warn" | "Error"
+
+--
+
+export type LogEntry = {
+	Timestamp: string,
+	Context: string,
+	Scope: string,
+	Level: LogLevel,
+	Message: string,
+}
+
+--
+
+type LogFormatFn = (entry: LogEntry) -> string
+type LoggerLike = {warn: (msg: string, ...unknown) -> ()}
+
+-- > // Funcs : Logs \\ < --
+
+local LevelOrder: {[LogLevel]: number} = {
+	Trace = 1, Debug = 2, Info = 3, Success = 3, Warn = 4, Error = 5,
+}
+
+--
+ 
+local LevelTag: {[LogLevel]: string} = {
+	Trace = "TRACE", Debug = "DEBUG", Info = "INFO", Success = "SUCCESS", Warn = "WARN", Error = "ERROR",
+}
+
+--
+
+local function timestamp(): string
+	local dt = DateTime.now()
+	local millis = dt.UnixTimestampMillis % 1000
+	return os.date("%H:%M:%S", dt.UnixTimestamp) .. string.format(".%03d", millis)
+end
+
+--
+
+local function defaultFormat(entry: LogEntry): string
+	return string.format("[%s] | [%s - %s] | [%s] %s", entry.Timestamp, entry.Scope, entry.Context, LevelTag[entry.Level], entry.Message)
+end
+
+-- > // Func : Logger new \\ < --
+
+local Logger = {}
+Logger.__index = Logger
+
+--
+
+function Logger.new(scope: string)
+	assert(type(scope) == "string" and #scope > 0, "[Owl] Logger scope must be a non empty string.")
+ 
+	local self = setmetatable({}, Logger)
+	self._scope = scope
+	self._muted = false
+	self._minLevel = nil :: number?
+	self._format = defaultFormat
+ 
+	self.info = function(msg: string, ...: unknown)
+		self:_emit("Info", msg, ...)
+	end
+ 
+	self.warn = function(msg: string, ...: unknown)
+		self:_emit("Warn", msg, ...)
+	end
+ 
+	self.error = function(msg: string, ...: unknown)
+		self:_emit("Error", msg, ...)
+	end
+ 
+	return self
+end
+
+-- > // Func : Should Log \\ < --
+
+function Logger:_shouldLog(level: LogLevel): boolean
+	if self._muted then return false end
+	local minLevel = self._minLevel or (if _config.Verbose then LevelOrder.Info else LevelOrder.Warn)
+	return LevelOrder[level] >= minLevel
+end
+
+-- > // Func : Emit \\ < --
+
+function Logger:_emit(level: LogLevel, msg: string, ...: unknown)
+	if not self:_shouldLog(level) then return end
+ 
+	local ok, formatted = pcall(string.format, msg, ...)
+	local text = if ok then formatted else msg
+ 
+	local entry: LogEntry = {
+		Timestamp = timestamp(),
+		Context = ContextLabel,
+		Scope = self._scope,
+		Level = level,
+		Message = text,
+	}
+ 
+	local line = self._format(entry)
+ 
+	if level == "Error" then
+		error(line, 3)
+	elseif level == "Warn" then
+		warn(line)
+	else
+		print(line)
+	end
+end
+
+-- > // Funcs : Level methods \\ < --
+
+function Logger:Trace(msg: string, ...: unknown)
+	self:_emit("Trace", msg, ...)
+end
+
+--
+ 
+function Logger:Debug(msg: string, ...: unknown)
+	self:_emit("Debug", msg, ...)
+end
+
+--
+ 
+function Logger:Info(msg: string, ...: unknown)
+	self:_emit("Info", msg, ...)
+end
+
+--
+ 
+function Logger:Success(msg: string, ...: unknown)
+	self:_emit("Success", msg, ...)
+end
+
+--
+ 
+function Logger:Warn(msg: string, ...: unknown)
+	self:_emit("Warn", msg, ...)
+end
+
+--
+ 
+function Logger:Error(msg: string, ...: unknown)
+	self:_emit("Error", msg, ...)
+end
+
+-- > // Func : Set Level \\ < --
+
+function Logger:SetLevel(level: LogLevel)
+	self._minLevel = LevelOrder[level]
+end
+
+-- > // Func : Set Format \\ < --
+
+function Logger:SetFormat(fn: LogFormatFn)
+	self._format = fn
+end
+
+-- > // Funcs : Mute/Unmute \\ < --
+
+function Logger:Mute()
+	self._muted = true
+end
+
+--
+ 
+function Logger:Unmute()
+	self._muted = false
+end
+
+-- > // Func : Child \\ < --
+
+function Logger:Child(name: string)
+	assert(type(name) == "string" and #name > 0, "[Owl] Logger:Child name must be a non empty string.")
+ 
+	local child = Logger.new(self._scope .. "." .. name)
+	child._minLevel = self._minLevel
+	child._format = self._format
+	child._muted = self._muted
+ 
+	return child
+end
+
+setmetatable(Logger, {
+	__call = function(_, scope: string)
+		return Logger.new(scope)
+	end,
+})
+
+export type LoggerInstance = typeof(Logger.new(""))
+ 
 -- > // Func : Inject Config \\ < --
 
 function OwlShared.InjectConfig(config: {Verbose: boolean})
@@ -30,25 +222,7 @@ end
 
 -- > // Func : Logger \\ < --
 
-function OwlShared.Logger(scope: string)
-	assert(type(scope) == "string" and #scope > 0, "[Owl] Logger scope must be a non empty string.")
-	local prefix = string.format("[Owl - %s - %s] ", ContextLabel, scope)
-
-	return {
-		info = function(msg: string, ...)
-			if not _config.Verbose then return end
-			print(prefix .. " " .. msg:format(...))
-		end,
-
-		warn = function(msg: string, ...)
-			warn(prefix .. " " .. msg:format(...))
-		end,
-
-		error = function(msg: string, ...)
-			error(prefix .. " " .. msg:format(...), 2)
-		end,
-	}
-end
+OwlShared.Logger = Logger
 
 -- > // Func : Hash Name \\ < --
 

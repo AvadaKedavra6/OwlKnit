@@ -37,7 +37,7 @@ Services and Controllers never communicate directly everything goes through OwlK
 - **OwlData** - full persistence layer with secure sessions and automatic hooks
 - **Abstracted Comm** - `Property`, `Signal` and `Client` methods (RemoteFunctions) with zero boilerplate
 
-The full API, detailed guides and complete examples are available at **[owlknit-docs.vercel.app](https://owlknit-docs.vercel.app/)**.
+The full API, detailed guides and complete examples are available at **[OwlKnit - Docs](https://owlknit-docs.vercel.app/)**.
 
 ---
 
@@ -49,7 +49,7 @@ Add this to your `wally.toml`:
 
 ```toml
 [dependencies]
-owlknit = "avadakedavra6/owlknit@1.0.3"
+owlknit = "avadakedavra6/owlknit@1.1.0"
 ```
 
 Then install:

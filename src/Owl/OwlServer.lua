@@ -73,6 +73,7 @@ type Service = {
 	Destroy: ((self: Service) -> ())?,
 	Trove: TroveLike?,
 	_comm: CommLike?,
+	_remoteKinds: {[string]: "Signal" | "Property" | "Function"}?,
 	_trove: TroveLike?,
 	[string]: unknown,
 }
@@ -201,7 +202,9 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 	service._comm = comm
 	service._trove = trove
 	service.Trove = trove
-	
+	service._remoteKinds = {}
+
+	local remoteKinds = service._remoteKinds :: {[string]: "Signal" | "Property" | "Function"}
 	local svcInbound: Middleware = (service.Middleware and service.Middleware.Inbound) or {}
 	local svcOutbound: Middleware = (service.Middleware and service.Middleware.Outbound) or {}
 	
@@ -239,6 +242,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 			)
 			
 			Log.info("Service %q bound client function %q.", serviceName, key)
+			remoteKinds[key] = "Function"
 			
 		elseif type(value) == "table" then
 			local marker = value :: RemoteMarker
@@ -252,6 +256,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 				trove:Add(remoteSignal :: any)
 				
 				Log.info("Service %q created client signal %q.", serviceName, key)
+				remoteKinds[key] = "Signal"
 			
 			elseif marker._owlType == "Property" then
 				local inboundMw = mergeMiddleware(globalMiddleware.Inbound, svcInbound, marker._inbound)
@@ -262,6 +267,7 @@ local function bootstrapService(service: any, globalMiddleware: {Inbound: Middle
 				trove:Add(remoteProperty :: any)
 
 				Log.info("Service %q created client property %q.", serviceName, key)
+				remoteKinds[key] = "Property"
 			else
 				Log.warn("Service %q: client value %q is not a function or marker, ignored.", serviceName, key)
 			end

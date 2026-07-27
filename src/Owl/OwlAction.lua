@@ -265,4 +265,10 @@ function OwlAction._DestroyAll()
 	table.clear(_activeStack)
 end
 
+-- > // Func : Get Registry \\ < --
+
+function OwlAction._GetRegistry(): {[string]: any}
+	return _registry
+end
+
 return OwlAction
