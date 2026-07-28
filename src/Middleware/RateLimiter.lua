@@ -21,7 +21,7 @@ local RateLimiter = {}
 -- > // Types \\ < --
 
 type PlayerRecord = {
-	timestamp: {number},
+	timestamps: {number},
 	warnedAt: number,
 	violations: number,
 	bannedUntil: number,
