@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve OwlKnit
 title: "[BUG]"
-labels: bug
+labels: bug, enhancement, feature
 assignees: ''
 
 ---
