@@ -2,7 +2,7 @@
 
 Thank you for wanting to contribute to OwlKnit! 
 
-Before opening a PR or an issue, please take two minutes to read this document—it helps avoid unnecessary back-and-forth.
+Before opening a PR or an issue, please take two minutes to read this document it helps avoid unnecessary back-and-forth.
 
 ## There are two ways to contribute, don't confuse them
 
