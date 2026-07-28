@@ -88,6 +88,12 @@ Don't want to use Wally or Rojo? Download the latest ready to use `.rbxm` direct
 
 ---
 
+## Credits
+
+You can see the credits on my website :)
+
+---
+
 <div align="center">
 
 *Thanks for using my framework, I work a lot on it :)*
