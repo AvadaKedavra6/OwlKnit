@@ -143,41 +143,51 @@ local function getOrCreateServiceProxy(serviceFolder: Instance, serviceName: str
 
 	local resolved: {[string]: unknown} = {}
 
-	local proxy = setmetatable({}, {
-		__index = function(_, key: string)
-			if resolved[key] then
-				return resolved[key]
-			end
+	local proxy
+    proxy = setmetatable({}, {
+        __index = function(_, key: string): unknown
+            if resolved[key] ~= nil then 
+                return resolved[key] 
+            end
 
-			local hashed = OwlShared.HashName(key)
-			local remote: unknown = nil
+            local hashed = OwlShared.HashName(key)
+            local remote: unknown = nil
 
-			if rfFolder and rfFolder:FindFirstChild(hashed) then
-				remote = clientComm:GetFunction(hashed)
-			elseif reFolder and reFolder:FindFirstChild(hashed) then
-				remote = clientComm:GetSignal(hashed)
-			elseif rpFolder and rpFolder:FindFirstChild(hashed) then
-				remote = clientComm:GetProperty(hashed)
-			else
-				Log.warn("Remote %q (hash: %s) not found in service %q.", key, hashed, serviceName)
-				return nil
-			end
+            if rfFolder and rfFolder:FindFirstChild(hashed) then
+                local rawFn = clientComm:GetFunction(hashed) :: (...unknown) -> unknown
 
-			resolved[key] = remote
-			return remote
-		end,
+                remote = function(first: unknown, ...: unknown)
+                    if first == proxy then
+                        return rawFn(...)
+                    else
+                        return rawFn(first, ...)
+                    end
+                end
 
-		__newindex = function()
-			error("[Owl] Service proxy is read-only.", 2)
-		end,
-	} :: ServiceProxy) -- > // A surveiller
+            elseif reFolder and reFolder:FindFirstChild(hashed) then
+                remote = clientComm:GetSignal(hashed)
+            elseif rpFolder and rpFolder:FindFirstChild(hashed) then
+                remote = clientComm:GetProperty(hashed)
+            else
+                Log.warn("Remote %q (hash: %s) not found in service %q.", key, hashed, serviceName)
+                return nil
+            end
 
-	_clientComms[serviceName] = {
-		_comm = clientComm,
-		_proxy = proxy,
-	}
+            resolved[key] = remote
+            return remote
+        end,
 
-	return proxy
+        __newindex = function()
+            error("[Owl] Service proxy is read-only.", 2)
+        end,
+    } :: ServiceProxy)
+
+    _clientComms[serviceName] = {
+        _comm = clientComm,
+        _proxy = proxy,
+    }
+
+    return proxy
 end
 
 -- > // Func : Auto Watch Client Components \\ < --

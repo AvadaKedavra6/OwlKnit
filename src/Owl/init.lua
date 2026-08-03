@@ -255,13 +255,6 @@ export type Addon = {
 
 --
 
-export type ProviderSlot = {
-	Name: string,
-	RequiredMethods: {string},
-}
-
---
-
 type AddonMetrics = {
 	InitTime: number?,
 	InitError: string?,
@@ -304,7 +297,7 @@ local _onStartSignal = Signal.new()
 
 local Owl = {}
 
-Owl.Version = "1.1.0"
+Owl.Version = "1.1.2"
 
 Owl.Config = {
 	Verbose = false,
@@ -639,8 +632,23 @@ end
 
 -- > // Func : Plr Token \\ < --
 
-function Owl.GetPlrToken(plr: Player): string?
-	return _tokens[plr]
+function Owl.GetPlrToken(plr)
+    local token = _tokens[plr]
+
+	if not token then
+		token = OwlShared.NewToken()
+		_tokens[plr] = token
+	end
+
+	return token
+end
+
+function Owl._SetPlrToken(plr, token)
+    _tokens[plr] = token
+end
+
+function Owl._ClearPlrToken(plr: Player)
+	_tokens[plr] = nil
 end
 
 -- > // Func : Start \\ < --

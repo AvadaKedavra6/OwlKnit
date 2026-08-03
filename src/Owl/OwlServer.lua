@@ -31,6 +31,7 @@ local CommParent = script.Parent.Parent
 local OwlServer = {}
 local _manualSpawn = false
 local _spawnDebounce: {[Player]: boolean} = {}
+local _globalTrove = nil
 
 -- > // Types \\ < --
 
@@ -52,6 +53,8 @@ type OwlLike = {
 	Config: {GlobalMiddleware: {Inbound: Middleware?, Outbound: Middleware?}?, [string]: unknown}?,
 	GetService: (name: string) -> unknown,
 	_GetServiceRegistry: (() -> {[string]: Service})?,
+	_SetPlrToken: (plr: Player, token: string) -> (),
+	_ClearPlrToken: (plr: Player) -> (),
 }
 
 --
@@ -181,6 +184,26 @@ local function autoWatchServerComponents()
 			end
 		end
 	end
+end
+
+-- > // Func : Setup Plr Tokens \\ < --
+
+local function setupPlrTokens(owl: OwlLike)
+	_globalTrove = Trove.new()
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+        if not owl._GetPlrToken(plr) then
+            owl._SetPlrToken(plr, OwlShared.NewToken())
+        end
+    end
+
+	_globalTrove:Add(Players.PlayerAdded:Connect(function(plr: Player)
+        owl._SetPlrToken(plr, OwlShared.NewToken())
+    end))
+
+    _globalTrove:Add(Players.PlayerRemoving:Connect(function(plr: Player)
+        owl._ClearPlrToken(plr)
+    end))
 end
 
 -- > // Func : BootStrap Serrcie \\ < --
@@ -404,6 +427,8 @@ function OwlServer.Bootstrap(owl: any, globalMiddleware: {Inbound: Middleware?, 
 	if _manualSpawn then
 		Log.warn("CharacterAutoLoads is disabled. " .. "Use Owl.SpawnPlr(plr) to load characters and replicate StarterGui/StarterPack.")
 	end
+
+	setupPlrTokens(owl)
 	
 	local configMw = owl.Config and owl.Config.GlobalMiddleware
 	local resolvedMw: {Inbound: Middleware, Outbound: Middleware} = {
@@ -439,6 +464,11 @@ end
 function OwlServer.Destroy()
 	_manualSpawn = false
 	_owl = nil
+
+	if _globalTrove then
+		_globalTrove:Destroy()
+		_globalTrove = nil
+	end
 end
 
 return OwlServer
