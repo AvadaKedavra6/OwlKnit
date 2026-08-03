@@ -7,7 +7,7 @@ EconomyAddon.Name = "EconomyAddon"
 EconomyAddon.Version = "1.0.0"
 EconomyAddon.Author = "Morax"
 EconomyAddon.Description = ""
-EconomyAddon.OwlVersion = ">=1.1.0"
+EconomyAddon.OwlVersion = ">=1.1.2"
 EconomyAddon.Dependencies = {} -- > // No other addons required for works
 EconomyAddon.OptionalDependencies = {"AnalyticsAddon"} -- > // Can depends of an another addon like "Analytics" but only if he existing, if not then he just ignores it
 EconomyAddon.Hooks = {}
